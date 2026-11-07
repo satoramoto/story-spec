@@ -1,0 +1,15 @@
+{
+  "name": "story-spec",
+  "version": "0.1.0",
+  "description": "Storybook stories as OpenSpec scenarios: a scenario() helper that gives a story a Given/When/Then and a sync that writes the spec from the stories.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": { ".": { "types": "./index.d.ts", "default": "./index.js" } },
+  "bin": { "story-spec": "./bin/story-spec.js" },
+  "files": ["index.js", "index.d.ts", "bin", "lib", "README.md"],
+  "scripts": { "test": "node --test test/*.test.js" },
+  "peerDependencies": { "storybook": ">=8.3" },
+  "peerDependenciesMeta": { "storybook": { "optional": true } }
+}
