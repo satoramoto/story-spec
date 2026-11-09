@@ -6,10 +6,39 @@
   "license": "MIT",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "exports": { ".": { "types": "./index.d.ts", "default": "./index.js" } },
-  "bin": { "story-spec": "./bin/story-spec.js" },
-  "files": ["index.js", "index.d.ts", "bin", "lib", "README.md"],
-  "scripts": { "test": "node --test test/*.test.js" },
-  "peerDependencies": { "storybook": ">=8.3" },
-  "peerDependenciesMeta": { "storybook": { "optional": true } }
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "bin": {
+    "story-spec": "./bin/story-spec.js"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "bin",
+    "lib",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js && tsc -p test"
+  },
+  "peerDependencies": {
+    "storybook": ">=8.3"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@storybook/react": "10.6.1",
+    "@types/react": "19.3.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "storybook": "10.6.1",
+    "typescript": "7.0.2"
+  }
 }
