@@ -2,7 +2,8 @@
 export interface PlayContext {
   canvasElement: HTMLElement;
   args: any;
-  step: (label: string, play: (context: PlayContext) => Promise<void> | void) => Promise<void>;
+  /** Storybook's step: it may return a promise or nothing, so a step is always awaited. */
+  step: (label: string, play: (context: PlayContext) => Promise<void> | void) => Promise<void> | void;
   canvas: any;
   userEvent: any;
   [key: string]: any;
