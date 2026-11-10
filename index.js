@@ -4,7 +4,7 @@
 // `parameters.scenario`, where `story-spec sync` reads them from the file without running
 // anything, and into the docs description, so autodocs prints them under the story.
 export function scenario(spec, base = {}) {
-  const { name, given, when, then, and = [], requirement, shall, act, check } = spec;
+  const { name, given, when, then, and = [], requirement, shall, act, check, walkthrough } = spec;
   if (!when || !then) throw new Error("scenario(): `when` and `then` are required");
   const words = { ...(name && { name }), ...(given && { given }), when, then, ...(and.length && { and }), ...(requirement && { requirement }), ...(shall && { shall }) };
   const lines = [given && `**Given** ${given}`, `**When** ${when}`, `**Then** ${then}`, ...and.map((a) => `**And** ${a}`)].filter(Boolean);
@@ -16,8 +16,19 @@ export function scenario(spec, base = {}) {
   const docs = base.parameters?.docs ?? {};
   return {
     ...base,
-    tags: [...(base.tags ?? []), "scenario"],
-    parameters: { ...base.parameters, scenario: words, docs: { ...docs, description: { ...docs.description, story: lines.join("\n\n") } } },
+    tags: [...(base.tags ?? []), "scenario", ...(walkthrough ? ["walkthrough"] : [])],
+    parameters: { ...base.parameters, ...(walkthrough && { walkthrough }), scenario: words, docs: { ...docs, description: { ...docs.description, story: lines.join("\n\n") } } },
     play,
   };
+}
+
+/** Await a screenshot of the current play state; ordinary plays need no capture service. */
+export async function captureCheckpoint(context, id) {
+  const window = context.canvasElement?.ownerDocument?.defaultView;
+  const sink = window?.__STORY_SPEC_CAPTURE__;
+  if (!sink) return;
+  const declaration = context.parameters?.walkthrough;
+  const point = declaration?.checkpoints?.find(point => point.id === id);
+  if (!point) throw new Error(`Walkthrough ${declaration?.id ?? '<unknown task>'}: undeclared checkpoint ${id}`);
+  await sink({ storyId: context.id, declaration, point });
 }

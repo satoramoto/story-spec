@@ -45,3 +45,49 @@ project and writes under the root it reports. A project whose `openspec/config.y
 Requirements in the spec that no story covers are reported and never removed. The project
 supplies Storybook (8.3 or later): the stories are read with its `csf-tools`, and `step`,
 `canvas` and `userEvent` come from its play context.
+
+## Visual walkthroughs
+
+Opt a scenario into a manual, then capture inside its existing play:
+
+```js
+import { scenario, captureCheckpoint } from 'story-spec';
+
+export const Search = scenario({
+  when: 'a reader searches for a topic',
+  then: 'the matching page is offered',
+  walkthrough: {
+    id: 'find-documentation', title: 'Find documentation', chapter: 'Getting started', order: 1,
+    checkpoints: [{ id: 'result', caption: 'Choose the matching page.', alt: 'Search results with a matching page link.' }],
+  },
+  act: async context => { /* use the real search control */ },
+  check: async context => {
+    /* assert the matching page is present */
+    await captureCheckpoint(context, 'result');
+  },
+});
+```
+
+Checkpoints are awaited by a capture runner and are no-ops in ordinary Storybook.
+They do not add When/Then clauses or change generated specs. Captions and alt text
+belong to the scenario; no second tutorial script is needed.
+
+### Portable evidence
+
+`story-spec/walkthrough` exports the browser-safe `validateWalkthrough` and
+`validateWalkthroughs`, plus TypeScript types. `story-spec/walkthrough/schema.json`
+describes bundle v1. `story-spec/walkthrough/node` separately exports
+`readWalkthrough(directory, expectedSources)` and `sourceIdentity(root, inputs, settings)`.
+These entries import neither React nor Storybook. Native producers emit the same JSON.
+
+A bundle is `manifest.json` plus relative PNG files. It contains a task, source
+identities, a completed run and ordered screenshot steps. Each image has dimensions,
+a SHA-256 digest, caption and alt text. Optional callouts use a positive integer,
+normalized `[x, y, width, height]` rectangle and text. Source identities contain
+repository URL, full revision, source-input digest, dirty flag and source URL.
+
+Supply expected sources independently of the manifest. Hash explicit input trees,
+lockfiles and capture settings, excluding generated folders. The filesystem reader
+checks real paths, dimensions and image hashes; publication must not accept partial
+runs or fall back to previous captures. Source identity is reproducibility metadata,
+not an attestation of an untrusted producer.

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/satoramoto/story-spec/walkthrough/v1",
+  "title": "Verified walkthrough v1",
+  "type": "object",
+  "required": ["version", "task", "sources", "run", "steps"],
+  "properties": {
+    "version": { "const": 1 },
+    "task": {
+      "type": "object", "required": ["id", "scenario", "title", "chapter", "order"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "scenario": { "$ref": "#/$defs/text" },
+        "title": { "$ref": "#/$defs/text" }, "chapter": { "$ref": "#/$defs/text" }, "order": { "type": "integer" }
+      }
+    },
+    "sources": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/source" } },
+    "run": {
+      "type": "object", "required": ["status", "adapter", "renderer", "theme", "viewport", "scale", "required"],
+      "properties": {
+        "status": { "const": "completed" }, "adapter": { "enum": ["web", "native"] },
+        "renderer": { "$ref": "#/$defs/text" }, "theme": { "$ref": "#/$defs/text" },
+        "viewport": { "type": "object", "required": ["width", "height"], "properties": { "width": { "$ref": "#/$defs/dimension" }, "height": { "$ref": "#/$defs/dimension" } } },
+        "scale": { "type": "number", "exclusiveMinimum": 0 },
+        "required": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "text": { "type": "string", "pattern": "\\S" },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "dimension": { "type": "integer", "minimum": 1 },
+    "source": {
+      "type": "object", "required": ["repository", "revision", "digest", "dirty", "url"],
+      "properties": {
+        "repository": { "type": "string", "pattern": "^https?://" }, "url": { "type": "string", "pattern": "^https?://" },
+        "revision": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+        "digest": { "$ref": "#/$defs/digest" }, "dirty": { "type": "boolean" }
+      }
+    },
+    "step": {
+      "type": "object", "required": ["id", "caption", "alt", "image", "digest", "width", "height"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "caption": { "$ref": "#/$defs/text" }, "alt": { "$ref": "#/$defs/text" },
+        "image": { "type": "string", "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*\\.png$" },
+        "digest": { "$ref": "#/$defs/digest" }, "width": { "$ref": "#/$defs/dimension" }, "height": { "$ref": "#/$defs/dimension" },
+        "callouts": { "type": "array", "items": {
+          "type": "object", "required": ["number", "rect", "text"],
+          "properties": {
+            "number": { "type": "integer", "minimum": 1 }, "text": { "$ref": "#/$defs/text" },
+            "rect": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "number", "minimum": 0, "maximum": 1 } }
+          }
+        } }
+      }
+    }
+  },
+  "$comment": "Use validateWalkthrough/readWalkthrough for source matching, unique task/step/callout identities, ordered required checkpoints, positive contained rectangles and filesystem/image integrity checks."
+}
