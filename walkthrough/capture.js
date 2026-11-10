@@ -34,11 +34,15 @@ export async function captureStory({ browser, url, storyId, sources, output, vie
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   await mkdir(dirname(destination), { recursive: true });
   const staging = await mkdtemp(`${destination}.staging-`);
-  let context, timer, declaration;
+  let context, timer, declaration, cancelled = false;
   const steps = [];
   let captureError;
   const operation = async () => {
     context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+    if (cancelled) {
+      await context.close();
+      throw new Error('Capture cancelled during context creation');
+    }
     const page = await context.newPage();
     page.setDefaultTimeout(timeout);
     const stamp = await context.request.get(new URL('manual-build.json', url.endsWith('/') ? url : `${url}/`).href, { timeout });
@@ -107,7 +111,7 @@ export async function captureStory({ browser, url, storyId, sources, output, vie
   try {
     const bundle = await Promise.race([
       running,
-      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Capture timed out after ${timeout}ms`)), timeout); }),
+      new Promise((_, reject) => { timer = setTimeout(() => { cancelled = true; reject(new Error(`Capture timed out after ${timeout}ms`)); }, timeout); }),
     ]);
     clearTimeout(timer);
     await context.close();
