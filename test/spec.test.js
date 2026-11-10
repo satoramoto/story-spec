@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { humanize, capabilities, parseSpec, renderSpec, renderDelta, diff } from "../lib/spec.js";
+import { humanize, capabilities, parseSpec, renderSpec, renderDelta, diff, retirements } from "../lib/spec.js";
 import { scenario } from "../index.js";
 
 test("export names read as scenario names", () => {
@@ -74,4 +74,50 @@ test("scenario() keeps the base story, adds the words and a stepped play", async
   assert.deepEqual(steps, ["Given g", "When w", "Then t, and x"]);
   assert.deepEqual(ran, ["base", "act", "check"]);
   assert.throws(() => scenario({ when: "w" }), /then/);
+});
+
+const retire = (over) => ({ file: "a.stories.tsx", capability: "seek-bar", requirement: null, reason: null, migration: null, renamedTo: null, ...over });
+
+test("a retired requirement is removed with the person's reason and migration; an unretired one is only reported", () => {
+  const { capabilities: caps } = capabilities(found);
+  const cap = caps["seek-bar"];
+  const main = parseSpec(renderSpec("seek-bar", { purpose: "P", requirements: [...cap.requirements, { name: "Gone", text: "It SHALL go.", scenarios: [] }, { name: "Stale", text: "It SHALL stay.", scenarios: [] }] }));
+  const { retires, problems } = retirements([retire({ requirement: "Gone", reason: "Merged into Seeking.", migration: "Read Seeking." }), retire({ requirement: "Other", capability: "elsewhere", reason: "r", migration: "m" })], "seek-bar");
+  assert.deepEqual(problems, []);
+  const d = diff(main, cap, retires);
+  assert.deepEqual(d.removed, [{ name: "Gone", reason: "Merged into Seeking.", migration: "Read Seeking." }]);
+  assert.deepEqual(d.missing.map((r) => r.name), ["Stale"]);
+  assert.deepEqual([d.added, d.modified, d.problems], [[], [], []]);
+  const text = renderDelta("seek-bar", d);
+  assert.match(text, /## REMOVED Requirements\n\n### Requirement: Gone\n\n\*\*Reason\*\*: Merged into Seeking\.\n\n\*\*Migration\*\*: Read Seeking\.\n/);
+  assert.deepEqual(parseSpec(text).requirements.map((r) => [r.name, r.section]), [["Gone", "REMOVED"]]);
+});
+
+test("a rename carries the requirement to its new name, modified only if it changed too", () => {
+  const { capabilities: caps } = capabilities(found);
+  const cap = caps["seek-bar"];
+  const old = { ...cap.requirements[0], name: "Scrubbing" };
+  const main = parseSpec(renderSpec("seek-bar", { purpose: "P", requirements: [old, cap.requirements[1]] }));
+  const { retires } = retirements([retire({ requirement: "Scrubbing", renamedTo: "Seeking" })], "seek-bar");
+  const d = diff(main, cap, retires);
+  assert.deepEqual(d.renamed, [{ from: "Scrubbing", to: "Seeking" }]);
+  assert.deepEqual([d.added.length, d.modified.length, d.missing.length], [0, 0, 0]);
+  assert.match(renderDelta("seek-bar", d), /## RENAMED Requirements\n\n- FROM: `### Requirement: Scrubbing`\n- TO: `### Requirement: Seeking`\n/);
+  const reworded = parseSpec(renderSpec("seek-bar", { purpose: "P", requirements: [{ ...old, text: "The bar SHALL scrub." }, cap.requirements[1]] }));
+  const both = diff(reworded, cap, retires);
+  assert.deepEqual([both.renamed.length, both.modified.map((r) => r.name), both.added.length], [1, ["Seeking"], 0]);
+});
+
+test("a spent retirement says nothing, and an unsound one is a problem", () => {
+  const { capabilities: caps } = capabilities(found);
+  const cap = caps["seek-bar"];
+  const main = parseSpec(renderSpec("seek-bar", cap));
+  // The spec no longer has it: the declaration can stay in the stories and nothing is written.
+  const spent = diff(main, cap, retirements([retire({ requirement: "Gone", reason: "r", migration: "m" })], "seek-bar").retires);
+  assert.deepEqual([spent.removed, spent.renamed, spent.problems, spent.missing], [[], [], [], []]);
+  assert.match(diff(main, cap, [retire({ requirement: "Seeking", reason: "r", migration: "m" })]).problems[0], /still cover/);
+  assert.match(diff(parseSpec(renderSpec("seek-bar", { ...cap, requirements: [...cap.requirements, { name: "Old", text: "It SHALL.", scenarios: [] }] })), cap, [retire({ requirement: "Old", renamedTo: "Nowhere" })]).problems[0], /no story covers/);
+  const bad = retirements([retire({ requirement: "A" }), retire({ requirement: "B", reason: "r" }), retire({ requirement: "C", renamedTo: "D", reason: "r" }), retire({})], "seek-bar");
+  assert.equal(bad.retires.length, 0);
+  assert.equal(bad.problems.length, 4);
 });

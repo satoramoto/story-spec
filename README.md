@@ -42,7 +42,32 @@ Where `openspec/` is comes from OpenSpec itself: `sync` runs `openspec context -
 project and writes under the root it reports. A project whose `openspec/config.yaml` says
 `store: <id>` therefore writes into that store; a repo-local project writes beside its code.
 
-Requirements in the spec that no story covers are reported and never removed. The project
+Requirements in the spec that no story covers are reported and never removed, unless a person
+retires them. Removing, renaming or moving a requirement is a decision, so it is written down in a
+stories file's meta, beside the capability it belongs to:
+
+```js
+parameters: {
+  spec: {
+    capability: 'seek-bar',
+    retires: [
+      // Removed: `sync --change` writes it under REMOVED with these words.
+      { requirement: 'Scrubbing is linear', reason: 'Merged into "Seeking".', migration: 'Read "Seeking".' },
+      // Renamed: written under RENAMED, and under MODIFIED too if its text or scenarios changed.
+      { requirement: 'Drags seek', renamedTo: 'Seeking' },
+      // From another capability (the only way once no story is left in it).
+      { capability: 'seek-legacy', requirement: 'Old bar', reason: 'Moved to seek-bar.', migration: 'Read seek-bar.' },
+    ],
+  },
+}
+```
+
+A retirement whose requirement the spec no longer has is spent and says nothing, so it can stay
+until the next tidy. One that names a requirement the stories still cover, or renames to a name
+no story covers, is a problem and nothing is written. To move a requirement to another
+capability, cover it by stories there (it is ADDED) and retire it here. `sync --specs` writes the
+stories' own Purpose (a delta cannot carry a changed one), and writes nothing for a capability no
+story is left in. The project
 supplies Storybook (8.3 or later): the stories are read with its `csf-tools`, and `step`,
 `canvas` and `userEvent` come from its play context.
 
