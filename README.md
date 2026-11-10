@@ -91,3 +91,12 @@ lockfiles and capture settings, excluding generated folders. The filesystem read
 checks real paths, dimensions and image hashes; publication must not accept partial
 runs or fall back to previous captures. Source identity is reproducibility metadata,
 not an attestation of an untrusted producer.
+
+`story-spec/walkthrough/capture` exports `walkthroughStories(index, projectRoot)`
+and `captureStory({ browser, url, storyId, sources, output, ...settings })`.
+The caller supplies a Playwright browser and served Storybook; the adapter owns
+and closes its context. `output` must be a new directory. The server must expose
+`manual-build.json`, containing source identities recorded at successful build
+time. Capture rejects a fingerprint mismatch before playing the story. Zen's
+`scripts/build-storybook.mjs` and `scripts/capture-manual.mjs` are the reference
+bounded build/capture pipeline. No Playwright dependency is loaded by the contract.

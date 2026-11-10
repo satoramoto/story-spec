@@ -41,6 +41,14 @@ export async function captureStory({ browser, url, storyId, sources, output, vie
     context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
     const page = await context.newPage();
     page.setDefaultTimeout(timeout);
+    const stamp = await context.request.get(new URL('manual-build.json', url.endsWith('/') ? url : `${url}/`).href, { timeout });
+    if (!stamp.ok()) throw new Error(`Walkthrough ${storyId}: missing Storybook build fingerprint; rebuild`);
+    const builtSources = await stamp.json();
+    for (const role of new Set([...Object.keys(sources), ...Object.keys(builtSources)])) {
+      for (const field of ['repository', 'revision', 'digest', 'dirty']) {
+        if (sources[role]?.[field] !== builtSources[role]?.[field]) throw new Error(`Walkthrough ${storyId}: stale Storybook source ${role}.${field}; rebuild`);
+      }
+    }
     await page.exposeBinding('__STORY_SPEC_CAPTURE__', async ({ frame }, data) => {
       try {
         if (frame !== page.mainFrame() || data.storyId !== storyId) throw new Error('Capture requested by a different story/frame');

@@ -23,6 +23,7 @@ test('web and native bundles share the contract', () => {
 test('incomplete, stale and malformed evidence cannot validate', () => {
   const cases = [
     b => b.version = 2,
+    b => delete b.steps[0].id,
     b => b.run.status = 'failed',
     b => b.run.required.push('result'),
     b => b.sources.product.digest = 'c'.repeat(64),

@@ -15,7 +15,7 @@ export function validateWalkthrough(bundle, expectedSources) {
   require(object(bundle), 'expected an object');
   require(bundle.version === walkthroughVersion, `unsupported version ${bundle.version}`);
   require(object(bundle.task), 'missing task');
-  require(identifier.test(bundle.task.id), 'invalid task id');
+  require(typeof bundle.task.id === 'string' && identifier.test(bundle.task.id), 'invalid task id');
   for (const field of ['scenario', 'title', 'chapter']) text(bundle.task[field], `task.${field}`);
   require(Number.isInteger(bundle.task.order), 'task.order must be an integer');
   require(object(bundle.sources) && Object.keys(bundle.sources).length > 0, 'missing sources');
@@ -32,6 +32,7 @@ export function validateWalkthrough(bundle, expectedSources) {
     require(object(expectedSources) && Object.keys(expectedSources).length > 0, 'missing expected sources');
     require(Object.keys(bundle.sources).sort().join('\0') === Object.keys(expectedSources).sort().join('\0'), 'source roles changed; regenerate');
     for (const [role, expected] of Object.entries(expectedSources)) {
+      require(object(expected), `invalid expected source ${role}`);
       const actual = bundle.sources[role];
       for (const field of ['repository', 'revision', 'digest', 'dirty']) {
         require(actual[field] === expected[field], `stale source ${role}.${field}; regenerate`);
@@ -50,7 +51,7 @@ export function validateWalkthrough(bundle, expectedSources) {
   const ids = new Set();
   for (const step of bundle.steps) {
     require(object(step), 'invalid step');
-    require(identifier.test(step.id) && !ids.has(step.id), `invalid or duplicate step ${step.id}`);
+    require(typeof step.id === 'string' && identifier.test(step.id) && !ids.has(step.id), `invalid or duplicate step ${step.id}`);
     ids.add(step.id);
     for (const field of ['caption', 'alt']) text(step[field], `${step.id}.${field}`);
     require(typeof step.image === 'string' && /^[a-zA-Z0-9_/-]+\.png$/.test(step.image) && !step.image.startsWith('/') && step.image.split('/').every(part => part && part !== '.' && part !== '..'), `invalid image path for ${step.id}`);
