@@ -1,4 +1,5 @@
 /** What a play step gets: Storybook's play context (canvasElement, args, step, and on 8.3+ canvas and userEvent). */
+import type { WalkthroughDeclaration } from './walkthrough/index.js';
 export interface PlayContext {
   canvasElement: HTMLElement;
   args: any;
@@ -10,6 +11,8 @@ export interface PlayContext {
 }
 
 export interface ScenarioSpec {
+  /** Opt this scenario into a screenshot-led manual. */
+  walkthrough?: WalkthroughDeclaration;
   /** The scenario's name in the spec; the export's name, spaced out, when absent. */
   name?: string;
   /** The state the scenario starts from, beyond what the story's args already say. */
@@ -38,3 +41,6 @@ export interface ScenarioStory {
  *  scenario's words in its parameters and a play of Given (the base's play), When (`act`) and
  *  Then (`check`) steps. */
 export function scenario<S extends object = {}>(spec: ScenarioSpec, base?: S): S & ScenarioStory;
+
+/** Capture an explicitly declared checkpoint, or do nothing when no runner is attached. */
+export function captureCheckpoint(context: PlayContext, id: string): Promise<void>;

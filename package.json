@@ -7,6 +7,16 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "exports": {
+    "./walkthrough/capture": "./walkthrough/capture.js",
+    "./walkthrough/schema.json": "./walkthrough/schema.json",
+    "./walkthrough": {
+      "types": "./walkthrough/index.d.ts",
+      "default": "./walkthrough/index.js"
+    },
+    "./walkthrough/node": {
+      "types": "./walkthrough/node.d.ts",
+      "default": "./walkthrough/node.js"
+    },
     ".": {
       "types": "./index.d.ts",
       "default": "./index.js"
@@ -20,6 +30,7 @@
     "index.d.ts",
     "bin",
     "lib",
+    "walkthrough",
     "README.md"
   ],
   "scripts": {
